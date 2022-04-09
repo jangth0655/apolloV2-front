@@ -1,102 +1,23 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React from "react";
 import styled from "styled-components";
-import { isLoggedInVar } from "../apollo";
-
+import { logUserIn } from "../apollo";
 import {
   faFacebookSquare,
   faInstagram,
 } from "@fortawesome/free-brands-svg-icons";
-import { Link } from "react-router-dom";
-
-const Container = styled.div`
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-`;
-
-const WhiteBox = styled.div`
-  background-color: white;
-  border: 1px solid ${(props) => props.theme.borderColor};
-  width: 100%;
-`;
-
-const TopBox = styled(WhiteBox)`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  padding: 35px 40px 20px 40px;
-  margin-bottom: 20px;
-  form {
-    margin-top: 35px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-  }
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 7px;
-  background-color: #fafafa;
-  border: 0.5px solid ${(props) => props.theme.borderColor};
-  border-radius: 3px;
-  margin-top: 5px;
-  box-sizing: border-box;
-  &::placeholder {
-    font-size: 12px;
-  }
-`;
-
-const Button = styled.input`
-  margin-top: 12px;
-  background-color: ${(props) => props.theme.accent};
-  color: white;
-  text-align: center;
-  padding: 5px 0;
-  width: 100%;
-  border: 0;
-  font-weight: 600;
-  font-size: 12px;
-`;
-
-const BottomBox = styled(WhiteBox)`
-  padding: 20px 0px;
-  text-align: center;
-  a {
-    font-weight: 600;
-    color: ${(props) => props.theme.accent};
-    margin-left: 5px;
-  }
-`;
-
-const Wrapper = styled.div`
-  max-width: 350px;
-  width: 100%;
-`;
-
-const Seperator = styled.div`
-  margin: 15px 0 30px 0px;
-  text-transform: uppercase;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  div {
-    width: 100%;
-    height: 2px;
-    background-color: ${(props) => props.theme.borderColor};
-  }
-  span {
-    margin: 0 10px;
-    color: #8e8e8e;
-  }
-`;
+import routes from "../routes";
+import AuthLayout from "../components/auth/AuthLayout";
+import { Button } from "../components/auth/Button";
+import Seperator from "../components/auth/Seperator";
+import { Input } from "../components/auth/Input";
+import FormBox from "../components/auth/FormBox";
+import BottomBox from "../components/auth/BottomBox";
+import { HelmetProvider } from "react-helmet-async";
+import PageTitle from "../components/PageTitle";
+import { useForm } from "react-hook-form";
+import FormError from "../components/auth/FormError";
+import { gql, useMutation } from "@apollo/client";
+import { Location, useLocation } from "react-router-dom";
 
 const FacebookLogin = styled.div`
   color: #385285;
@@ -106,35 +27,127 @@ const FacebookLogin = styled.div`
   }
 `;
 
+interface LoginForm {
+  username: string;
+  password: string;
+  errors: string;
+}
+
+interface LoginState {
+  username: string;
+  password: string;
+  message: string;
+}
+
+const Notification = styled.div`
+  color: #2ecc71;
+`;
+
+const LOGIN_MUTATION = gql`
+  mutation login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
+      ok
+      token
+      error
+    }
+  }
+`;
+
 const Login = () => {
+  const location: Location = useLocation();
+  const state = location.state as LoginState | null;
+
+  const { register, handleSubmit, formState, setError, clearErrors } =
+    useForm<LoginForm>({
+      mode: "onChange",
+      defaultValues: {
+        username: state?.username || "",
+        password: state?.password || "",
+      },
+    });
+  const onCompleted = (data: any) => {
+    const {
+      login: { ok, error, token },
+    } = data;
+    if (!ok) {
+      return setError("errors", { message: error });
+    }
+    if (token) {
+      logUserIn(token);
+    }
+  };
+  const [login, { loading }] = useMutation(LOGIN_MUTATION, {
+    onCompleted,
+  });
+  const onValid = (data: LoginForm) => {
+    if (loading) return;
+    const { username, password } = data;
+    login({
+      variables: {
+        username,
+        password,
+      },
+    });
+  };
+
+  //console.log(formState.isValid);
+  const clearLoginError = () => {
+    clearErrors("errors");
+  };
+
   return (
-    <Container>
-      <Wrapper>
-        <TopBox>
+    <HelmetProvider>
+      <AuthLayout>
+        <PageTitle title="Log in" />
+        <FormBox>
           <div>
             <FontAwesomeIcon icon={faInstagram} size="3x" />
           </div>
-          <form>
-            <Input type="text" placeholder="Username" />
-            <Input type="password" placeholder="Password" />
-            <Button type="submit" value="Log in" placeholder="Log in" />
+          <Notification>{state?.message}</Notification>
+          <form onSubmit={handleSubmit(onValid)}>
+            <Input
+              {...register("username", {
+                onChange: clearLoginError,
+                required: true,
+                minLength: {
+                  value: 3,
+                  message: "Username should be longer then 3",
+                },
+              })}
+              type="text"
+              placeholder="Username"
+              hasError={Boolean(formState.errors.username?.message)}
+            />
+            <FormError message={formState.errors.username?.message} />
+            <Input
+              {...register("password", {
+                onChange: clearLoginError,
+                required: true,
+              })}
+              type="password"
+              placeholder="Password"
+            />
+            <Button
+              type="submit"
+              value={loading ? "Loading..." : "Log in"}
+              placeholder="Log in"
+              disabled={!formState.isValid || loading}
+            />
           </form>
-          <Seperator>
-            <div></div>
-            <span>or</span>
-            <div></div>
-          </Seperator>
+          <FormError message={formState.errors?.errors?.message} />
+          <Seperator />
           <FacebookLogin>
             <FontAwesomeIcon icon={faFacebookSquare} />
             <span>Log ini with Facebook</span>
           </FacebookLogin>
-        </TopBox>
-        <BottomBox>
-          <span>Don't have an account?</span>
-          <Link to={`/sign-up`}>Sign up</Link>
-        </BottomBox>
-      </Wrapper>
-    </Container>
+        </FormBox>
+        <BottomBox
+          ctx="Don't have an account"
+          link={routes.signUp}
+          linkText="SignUp"
+        />
+      </AuthLayout>
+    </HelmetProvider>
   );
 };
 
