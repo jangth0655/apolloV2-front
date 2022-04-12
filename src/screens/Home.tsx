@@ -13,7 +13,17 @@ const FEED_QUERY = gql`
       file
       caption
       likes
-      comments
+      comments {
+        id
+        payload
+        createdAt
+        isMine
+        user {
+          username
+          avatar
+        }
+      }
+      commentNumber
       createdAt
       isMine
       isLiked
@@ -31,7 +41,17 @@ interface SeeFeedResponse {
     file: string;
     caption: string;
     likes: number;
-    comments: string;
+    comments: {
+      createdAt: string;
+      isMine: boolean;
+      payload: string;
+      id: number;
+      user: {
+        username: string;
+        avatar: string;
+      };
+    }[];
+    commentNumber: number;
     createdAt: string;
     isMine: string;
     isLiked: boolean;
