@@ -73,9 +73,11 @@ const Comment = ({ user, payload, id, isMine, photoId }: CommentProps) => {
   };
   return (
     <CommentContainer>
-      <FatText>{user?.username}</FatText>
+      <Link to={`users/${user.username}`}>
+        <FatText>{user?.username}</FatText>
+      </Link>
       <CommentCaption>
-        {payload.split(" ").map((word, i) =>
+        {payload?.split(" ").map((word, i) =>
           /#[\w]+/.test(word) ? (
             <React.Fragment key={i}>
               <Link to={`/hashtags/${word}`}>{word}</Link>{" "}

@@ -5,12 +5,13 @@ import routes from "./routes";
 import Home from "./screens/Home";
 import Login from "./screens/Login";
 import Notfound from "./screens/Notfound";
-import SignUp from "./screens/Signup";
 import { client } from "./apollo";
 import { ThemeProvider } from "styled-components";
 import { darkTheme, GlobalStyles, lightTheme } from "./theme";
 import { darkModeVar } from "./apollo";
 import Layout from "./components/Layout";
+import Profile from "./screens/Profile";
+import SignUp from "./screens/Signup";
 
 function App() {
   const isLoggedIn = useReactiveVar(isLoggedInVar);
@@ -36,7 +37,15 @@ function App() {
               />
               <Route
                 path={routes.signUp}
-                element={isLoggedIn ? <Home /> : <SignUp />}
+                element={!isLoggedIn ? <SignUp /> : null}
+              />
+              <Route
+                path="/users/:username"
+                element={
+                  <Layout>
+                    <Profile />
+                  </Layout>
+                }
               />
               <Route path="*" element={<Notfound />} />
             </Routes>

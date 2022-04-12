@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet";
 
 type PageTitleProps = {
-  title: string;
+  title?: string;
 };
 
 const PageTitle = ({ title }: PageTitleProps) => {

@@ -1,34 +1,26 @@
 import { gql, useQuery } from "@apollo/client";
 import Photo from "../components/feed/Photo";
 import PageTitle from "../components/PageTitle";
+import { COMMENT_FRAGMENT, PHOTO_FRAGMENT } from "../fragments";
 
 const FEED_QUERY = gql`
   query seeFeed {
     seeFeed {
-      id
+      ...PhotoFragment
       user {
         username
         avatar
       }
-      file
       caption
-      likes
       comments {
-        id
-        payload
-        createdAt
-        isMine
-        user {
-          username
-          avatar
-        }
+        ...CommentFragment
       }
-      commentNumber
       createdAt
       isMine
-      isLiked
     }
   }
+  ${PHOTO_FRAGMENT}
+  ${COMMENT_FRAGMENT}
 `;
 
 interface SeeFeedResponse {
@@ -60,6 +52,7 @@ interface SeeFeedResponse {
 
 const Home = () => {
   const { data } = useQuery<SeeFeedResponse>(FEED_QUERY);
+  console.log(data);
 
   return (
     <div>
